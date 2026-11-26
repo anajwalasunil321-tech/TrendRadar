@@ -35,7 +35,7 @@ on:
     #   "15 * * * *"     → 每小时第15分钟 / minute 15 every hour
     #   "30 0-14 * * *"  → 北京时间 8:00-22:00 每小时第30分钟 / Beijing 8am-10pm
     #
-    - cron: "33 * * * *"
+    - cron: "33 0,6,12 * * *"
 
   workflow_dispatch:
 
@@ -44,7 +44,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 jobs:
@@ -168,6 +168,14 @@ jobs:
           S3_REGION: ${{ secrets.S3_REGION }}
           GITHUB_ACTIONS: true
         run: uv run python -m trendradar
+      - name: Commit report for hot board
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html output/html/latest/current.html
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Update hot report $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
 
       # --------------------------------------------------------------------------------
       # ☁️ CLOUDFLARE PAGES DEPLOY / 部署到 Cloudflare Pages（可选）
